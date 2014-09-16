@@ -15,9 +15,12 @@ cabal-version:       >= 1.10
 
 executable nfa2dfa
   main-is:             Main.hs
-  other-modules:       NFA2DFA.Parse
+  other-modules:       NFA2DFA.Algorithm
+                       NFA2DFA.Data
+                       NFA2DFA.Parse
   build-depends:       base >= 4 && < 4.8
                      , containers
+                     , parsec
                      , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010

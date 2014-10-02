@@ -12,7 +12,6 @@ run: all
 
 clean:
 	$(RM) $(FILE).hi
-	$(RM) $(FILE).hs
 	$(RM) $(FILE).o
 	$(RM) $(NAME)
 

@@ -1,3 +1,9 @@
+{-
+The parser combinators used when reading in NFA input.
+This was created as Project 1 for EECS 665 at the University of Kansas.
+
+Author: Ryan Scott
+-}
 module NFA2DFA.Parse where
 
 import           Control.Applicative
@@ -21,15 +27,19 @@ import           Text.Parsec.String
 lexer :: TokenParser st
 lexer = PT.makeTokenParser emptyDef
 
+-- | Parses something between curly braces.
 braces :: Parser a -> Parser a
 braces = PT.braces lexer
 
+-- | Parses a natural number.
 natural :: Parser Integer
 natural = PT.natural lexer
 
+-- | Parses a string, ignoring surrounding whitespace.
 wsString :: String -> Parser String
 wsString str = spaces *> string str <* spaces
 
+-- | Parses any number of natural numbers, separated by commas.
 csNaturals :: Parser (Set Integer)
 csNaturals = (S.fromList . map fromInteger <$> oneOrMore)
          <|> (spaces *> return S.empty)
@@ -41,31 +51,34 @@ csNaturals = (S.fromList . map fromInteger <$> oneOrMore)
         ns <- PT.many (char ',' *> spaces *> natural)
         return $ n:ns
 
+-- | Parses "Initial State: {x}"
 initialState :: Parser AState
 initialState = wsString "Initial" *> wsString "State:" *> (fromInteger <$> braces natural)
 
+-- | Parses "Final States: {x}"
 finalStates :: Parser (Set AState)
 finalStates = wsString "Final" *> wsString "States:" *> (S.map fromInteger <$> braces csNaturals)
 
+-- | Parses "Total States: x"
 totalStates :: Parser Word
 totalStates = wsString "Total" *> wsString "States:" *> (fromInteger <$> natural)
 
+-- | Parses the input symbols (e.g., "State a b c E")
 transitions :: Parser [Char]
 transitions = wsString "State" *> PT.many (PT.try $ spaces *> letter) <* spaces
 
+-- | Parses a list of transitions (e.g., "1 {} {2,3}")
 transitionFun :: [Transition] -> Parser NFATran
 transitionFun trans = do
     spaces
     aStateKey <- fromInteger <$> natural
-    tFun <- foldM' M.empty trans $ \q t -> do
+    tFun <- (flip . flip foldM) M.empty trans $ \q t -> do
         aStatesValues <- S.map fromInteger <$> braces csNaturals
         return $ M.insert (aStateKey, t) aStatesValues q
     spaces
     return tFun
-  where
-    foldM' :: Monad m => a -> [b] -> (a -> b -> m a) -> m a
-    foldM' = flip . flip foldM
 
+-- | Combines all of the above parsers to parse the entire input.
 nfa2dfaInput :: Parser NFA
 nfa2dfaInput = do
     iAState    <- initialState
